@@ -1,4 +1,10 @@
 input_file = "soccer.dat"
+FOR_COL = "F"
+AGAINST_COL = "A"
+TEAM_COL = "Team"
+START_INDEX = 0
+MAX_DIFF = 1000
+BLANK = ""
 
 
 def read_soccer_data(input_file):
@@ -8,39 +14,63 @@ def read_soccer_data(input_file):
     return data
 
 
-def extract_cols(row):
-    rows = row.split(" ")
-    if len(rows) < 10:
-        return False
+def get_headers_with_indexes(header):
+    start = START_INDEX
+    end = START_INDEX
+    start_flag = False
+    header_indexs = []
+    for index in range(len(header)):
+        ch = header[index]
+        if ch.strip() != BLANK:
+
+            if not start_flag:
+                if start > START_INDEX:
+                    header_indexs.append(
+                        [header[start:end].strip(), start, end])
+                start_flag = True
+                start = index
+        else:
+            start_flag = False
+            end = index
+    header_indexs.append([header[start:end].strip(), start, end])
+    return header_indexs
+
+
+def extract_cols(row, headers):
     records = []
-    index = 0
-    while len(records) < 10:
+    if len(row.strip()) == START_INDEX:
+        return records
+    header_map = {}
+    index = START_INDEX
+    for header in headers:
         try:
-            value = rows[index].strip()
-            index += 1
-            if value == 'Team':
-                break
-            if len(value):
-                records.append(value)
+            value = row[header[1]:header[2]].strip()
+            header_map[header[START_INDEX]] = value
         except Exception as e:
             break
-    indices_to_access = [1, 6, 8]
-    if len(records) == 10:
-        return list(map(records.__getitem__, indices_to_access))
+    return header_map
 
-    return []
+
+def clean_col_value(value):
+    return int(value.replace("-", "").strip())
 
 
 def calculate_min_diff(data_list):
-    max_diff_record = [10000, 0]
-    for row in data_list:
-        cols = extract_cols(row)
-        if not cols:
+    max_diff_record = [MAX_DIFF, START_INDEX]
+    headers_with_indexes = get_headers_with_indexes(data_list[START_INDEX])
+    for row in data_list[1:]:
+        cols = extract_cols(row, headers_with_indexes)
+        if not len(cols):
             continue
-        diff = abs(int(cols[1]) - int(cols[2]))
-        if diff < max_diff_record[0]:
-            max_diff_record[0] = diff
-            max_diff_record[1] = cols
+        try:
+            against = clean_col_value(cols[FOR_COL])
+            for_goal = clean_col_value(cols[AGAINST_COL])
+            diff = abs(against - for_goal)
+        except:
+            continue
+        if diff < max_diff_record[START_INDEX]:
+            max_diff_record[START_INDEX] = diff
+            max_diff_record[1] = [against, for_goal, cols[TEAM_COL].strip()]
     return max_diff_record
 
 
@@ -50,4 +80,4 @@ if __name__ == "__main__":
     data = read_soccer_data(input_file)
     max_diff_record = calculate_min_diff(data)
     print(
-        f"Team with smallest difference is {max_diff_record[0]} and Goals for and against are {max_diff_record[1][1]} and {max_diff_record[1][2]}")
+        f"Team {max_diff_record[1][2]} with smallest difference is {max_diff_record[0]} and Goals for and against are {max_diff_record[1][0]} and {max_diff_record[1][1]}")

@@ -1,5 +1,10 @@
 
 input_file = "w_data.dat"
+MAX_TEMP_COL = "MxT"
+MIN_TEMP_COL = "MnT"
+DAY_COL = "Dy"
+START_INDEX = 0
+BLANK = ""
 
 
 def read_weather_data(input_file):
@@ -9,33 +14,58 @@ def read_weather_data(input_file):
     return data
 
 
-def extract_cols(row):
-    rows = row.split(" ")
-    if len(rows) < 10:
-        return False
+def get_headers_with_indexes(header):
+    start = START_INDEX
+    end = START_INDEX
+    start_flag = False
+    header_indexs = []
+    for index in range(len(header)):
+        ch = header[index]
+        if ch.strip() != BLANK:
+
+            if not start_flag:
+                if start > START_INDEX:
+                    header_indexs.append(
+                        [header[start:end].strip(), start, end])
+                start_flag = True
+                start = index
+        else:
+            start_flag = False
+            end = index
+    header_indexs.append([header[start:end].strip(), start, end])
+    return header_indexs
+
+
+def extract_cols(row, headers):
     records = []
-    index = 0
-    while len(records) < 3:
+    if len(row.strip()) == START_INDEX:
+        return records
+    header_map = {}
+    index = START_INDEX
+    for header in headers:
         try:
-            value = rows[index].strip()
-            index += 1
-            if len(value) and int(value):
-                records.append(int(value))
+            value = row[header[1]:header[2]].strip()
+            header_map[header[START_INDEX]] = value
         except Exception as e:
             break
-    return records if len(records) == 3 else []
+    return header_map
 
 
 def calculate_max_diff(data_list):
-    max_diff_record = [0, 0]
-    for row in data_list:
-        cols = extract_cols(row)
-        if not cols:
+    max_diff_record = [START_INDEX, START_INDEX]
+    headers_with_indexes = get_headers_with_indexes(data_list[START_INDEX])
+    for row in data_list[1:]:
+        cols = extract_cols(row, headers_with_indexes)
+        if not len(cols):
             continue
-        diff = cols[1] - cols[2]
-        if diff > max_diff_record[0]:
-            max_diff_record[0] = diff
-            max_diff_record[1] = cols
+        try:
+            diff = int(cols[MAX_TEMP_COL]) - int(cols[MIN_TEMP_COL])
+        except:
+            continue
+        if diff > max_diff_record[START_INDEX]:
+            max_diff_record[START_INDEX] = diff
+            max_diff_record[1] = [int(cols[MAX_TEMP_COL]), int(
+                cols[MIN_TEMP_COL]), cols[DAY_COL]]
     return max_diff_record
 
 
@@ -44,6 +74,5 @@ if __name__ == "__main__":
     print(f"Reading the input file {input_file}")
     data = read_weather_data(input_file)
     max_diff_record = calculate_max_diff(data)
-    print(max_diff_record)
     print(
-        f"Day number with max temperature spread is {max_diff_record[0]} and Max and Min temperature are {max_diff_record[1][1]} and {max_diff_record[1][2]}")
+        f"Day number {max_diff_record[1][2]} with max temperature spread is {max_diff_record[0]} and Max and Min temperature are {max_diff_record[1][0]} and {max_diff_record[1][1]}")
