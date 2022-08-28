@@ -54,11 +54,19 @@ def extract_cols(row, headers):
 def clean_col_value(value):
     return int(value.replace("-", "").strip())
 
+def get_header_index(data_list):
+    index = 0 
+    while True:
+        if TEAM_COL in data_list[index].strip():
+            break
+        index+=1
+    return index
 
 def calculate_min_diff(data_list):
     max_diff_record = [MAX_DIFF, START_INDEX]
-    headers_with_indexes = get_headers_with_indexes(data_list[START_INDEX])
-    for row in data_list[1:]:
+    header_index = get_header_index(data_list)
+    headers_with_indexes = get_headers_with_indexes(data_list[header_index])
+    for row in data_list[header_index+1:]:
         cols = extract_cols(row, headers_with_indexes)
         if not len(cols):
             continue

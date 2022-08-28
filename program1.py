@@ -5,6 +5,9 @@ MIN_TEMP_COL = "MnT"
 DAY_COL = "Dy"
 START_INDEX = 0
 BLANK = ""
+START_TEXT = "<pre>"
+END_TEXT = '</pre>'
+
 
 
 def read_weather_data(input_file):
@@ -38,7 +41,7 @@ def get_headers_with_indexes(header):
 
 def extract_cols(row, headers):
     records = []
-    if len(row.strip()) == START_INDEX:
+    if len(row.strip()) in [BLANK,END_TEXT] :
         return records
     header_map = {}
     index = START_INDEX
@@ -50,11 +53,19 @@ def extract_cols(row, headers):
             break
     return header_map
 
+def get_header_index(data_list):
+    index = 0 
+    while True:
+        if MIN_TEMP_COL in data_list[index].strip():
+            break
+        index+=1
+    return index
 
 def calculate_max_diff(data_list):
     max_diff_record = [START_INDEX, START_INDEX]
-    headers_with_indexes = get_headers_with_indexes(data_list[START_INDEX])
-    for row in data_list[1:]:
+    header_index = get_header_index(data_list)
+    headers_with_indexes = get_headers_with_indexes(data_list[header_index])
+    for row in data_list[header_index + 1:]:
         cols = extract_cols(row, headers_with_indexes)
         if not len(cols):
             continue
